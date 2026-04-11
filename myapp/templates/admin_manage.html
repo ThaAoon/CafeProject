@@ -1,0 +1,727 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Admin Management - H2O</title>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-3">
+        <div class="col-12">
+            <a href="{% url 'employee_nav' %}" class="btn btn-outline-secondary btn-sm" style="border-radius: 10px;">
+                <i class="bi bi-arrow-left"></i> กลับหน้าเมนูหลัก
+            </a>
+        </div>
+    </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold" style="color: var(--latte-main);">การจัดการข้อมูลร้าน</h2>
+    </div>
+
+    <ul class="nav nav-tabs mb-3 flex-nowrap overflow-x-auto border-0" id="adminTab" role="tablist" style="scrollbar-width: none; -ms-overflow-style: none;">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active text-nowrap" id="product-tab" data-bs-toggle="tab" data-bs-target="#product">จัดการเมนู</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link text-nowrap" id="stock-tab" data-bs-toggle="tab" data-bs-target="#stock">สต็อกวัตถุดิบ</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link text-nowrap" id="order-tab" data-bs-toggle="tab" data-bs-target="#order">ประวัติคำสั่งซื้อ</button>
+        </li>
+    </ul>
+
+    <div class="tab-content bg-white p-2 p-md-4 shadow-sm rounded" style="border-radius: 20px;">
+        <!-- จัดการเมนู -->
+        <div class="tab-pane fade show active" id="product">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                <h5 class="mb-0 fw-bold">รายการเมนูอาหารและเครื่องดื่ม</h5>
+                <div class="d-flex gap-2 flex-wrap">
+                    <input type="text" id="productSearch" class="form-control form-control-sm" placeholder="ค้นหาชื่อเมนู..." style="width: 180px; border-radius: 8px; font-size: 0.85rem;">
+                    <select id="categoryFilter" class="form-select form-select-sm" style="width: 130px; border-radius: 8px; font-size: 0.85rem;">
+                        <option value="all">ทุกหมวดหมู่</option>
+                        {% for cat in categories %}
+                            <option value="cat-{{ cat.category_id }}">{{ cat.category_name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-success btn-sm" onclick="openAddModal()" style="border-radius: 8px; font-size: 0.85rem; padding: 5px 15px;">
+                        <i class="bi bi-plus-lg"></i> เพิ่มเมนู
+                    </button>
+                </div>
+            </div>
+            
+            <div class="row" id="productContainer">
+                {% for prod in products %}
+                <div class="col-md-6 mb-3 product-item cat-{{ prod.category_id }}">
+                    <div class="card p-3 border-0 shadow-sm" style="border-radius: 15px;">
+                        <div class="d-flex align-items-center">
+                            <!-- Product Image -->
+                            <div class="me-3" style="width: 70px; height: 70px; min-width: 70px;">
+                                <img src="{% static 'img/product/' %}{{ prod.product_id }}.png" 
+                                     alt="{{ prod.product_name }}" 
+                                     class="img-fluid rounded shadow-sm" 
+                                     style="width: 100%; height: 100%; object-fit: cover;"
+                                     onerror="this.src='https://placehold.co/100x100?text=Coffee'">
+                            </div>
+                            <!-- Product Info -->
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="fw-bold">{{ prod.product_name }}</span>
+                                        <span class="badge bg-light text-dark ms-2">{{ prod.size|default:"" }}</span>
+                                        <div class="text-muted small">{{ prod.category.category_name }}</div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="fw-bold text-primary mb-1">฿{{ prod.price }}</div>
+                                        {% if prod.is_active == 'True' %}
+                                            <span class="badge bg-success mb-2" style="font-size: 0.75rem;">เปิดบริการ</span>
+                                        {% else %}
+                                            <span class="badge bg-danger mb-2" style="font-size: 0.75rem;">ปิดบริการ</span>
+                                        {% endif %}
+                                        <br>
+                                        <button class="btn btn-sm btn-outline-warning" 
+                                                onclick="openEditModal('{{ prod.product_id }}', '{{ prod.product_name }}', '{{ prod.price }}', '{{ prod.is_active }}')"
+                                                style="border-radius: 8px;">
+                                            <i class="bi bi-pencil"></i> แก้ไข
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center text-muted py-4">ไม่พบข้อมูลเมนู</div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination สำหรับเมนูสินค้า -->
+            {% if products.has_other_pages %}
+            <nav aria-label="Product navigation" class="mt-4">
+                <ul class="pagination pagination-sm justify-content-center">
+                    {% if products.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?p_page={{ products.previous_page_number }}#product" style="border-radius: 8px 0 0 8px;">&laquo; ก่อนหน้า</a></li>
+                    {% endif %}
+                    <li class="page-item disabled"><span class="page-link text-dark">หน้า {{ products.number }} จาก {{ products.paginator.num_pages }}</span></li>
+                    {% if products.has_next %}
+                        <li class="page-item"><a class="page-link" href="?p_page={{ products.next_page_number }}#product" style="border-radius: 0 8px 8px 0;">ถัดไป &raquo;</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+
+        <!-- สต็อกวัตถุดิบ -->
+        <div class="tab-pane fade" id="stock">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-2">
+                <h5 class="mb-0 fw-bold">รายการวัตถุดิบ (Ingredients)</h5>
+                <div class="d-flex gap-2 flex-wrap">
+                    <input type="text" id="stockSearch" class="form-control form-control-sm" placeholder="ค้นหาชื่อวัตถุดิบ..." style="width: 180px; border-radius: 8px;">
+                    <select id="supplierFilter" class="form-select form-select-sm" style="width: 150px; border-radius: 8px;">
+                        <option value="all">ทุก Supplier</option>
+                        {% for sup in suppliers %}
+                            <option value="{{ sup.supplier_name }}">{{ sup.supplier_name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-success btn-sm" onclick="openAddIngredientModal()" style="border-radius: 8px;">
+                        <i class="bi bi-plus-lg"></i> เพิ่มวัตถุดิบ
+                    </button>
+                </div>
+            </div>
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-hover align-middle" id="stockTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ชื่อวัตถุดิบ</th>
+                            <th>Supplier</th>
+                            <th>คงเหลือ</th>
+                            <th>หน่วย</th>
+                            <th>สถานะ</th>
+                            <th>เครื่องมือ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ing in ingredients %}
+                        <tr class="ingredient-row" data-supplier="{{ ing.supplier.supplier_name }}">
+                            <td class="fw-bold">{{ ing.ingredient_name }}</td>
+                            <td class="supplier-name">{{ ing.supplier.supplier_name }}</td>
+                            <td>{{ ing.stock_qty|floatformat }}</td>
+                            <td>{{ ing.unit }}</td>
+                            <td>
+                                {% if ing.stock_qty <= ing.min_qty %}
+                                    <span class="badge bg-danger">ของใกล้หมด</span>
+                                {% else %}
+                                    <span class="badge bg-success">ปกติ</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-warning" 
+                                        onclick="openEditIngredientModal('{{ ing.ingredient_id }}', '{{ ing.ingredient_name }}', '{{ ing.supplier.supplier_id }}', '{{ ing.stock_qty }}', '{{ ing.min_qty }}')"
+                                        style="border-radius: 8px;">
+                                    <i class="bi bi-pencil"></i> แก้ไข
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mobile View for Stock -->
+            <div class="d-md-none" id="stockMobileContainer">
+                {% for ing in ingredients %}
+                <div class="ingredient-card mb-3 p-3 border rounded shadow-sm ingredient-row" data-supplier="{{ ing.supplier.supplier_name }}" style="border-radius: 15px !important;">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <div class="fw-bold fs-6">{{ ing.ingredient_name }}</div>
+                            <div class="text-muted small">Supplier: {{ ing.supplier.supplier_name }}</div>
+                        </div>
+                        {% if ing.stock_qty <= ing.min_qty %}
+                            <span class="badge bg-danger">ของใกล้หมด</span>
+                        {% else %}
+                            <span class="badge bg-success">ปกติ</span>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="text-primary fw-bold">คงเหลือ: {{ ing.stock_qty|floatformat }} {{ ing.unit }}</div>
+                        <button class="btn btn-sm btn-outline-warning px-3" 
+                                onclick="openEditIngredientModal('{{ ing.ingredient_id }}', '{{ ing.ingredient_name }}', '{{ ing.supplier.supplier_id }}', '{{ ing.stock_qty }}', '{{ ing.min_qty }}')"
+                                style="border-radius: 8px;">
+                            <i class="bi bi-pencil"></i> แก้ไข
+                        </button>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center text-muted py-4">ไม่พบข้อมูลสต็อก</div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination สำหรับสต็อกวัตถุดิบ -->
+            {% if ingredients.has_other_pages %}
+            <nav aria-label="Stock navigation" class="mt-4">
+                <ul class="pagination pagination-sm justify-content-center">
+                    {% if ingredients.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?s_page={{ ingredients.previous_page_number }}#stock" style="border-radius: 8px 0 0 8px;">&laquo; ก่อนหน้า</a></li>
+                    {% endif %}
+                    <li class="page-item disabled"><span class="page-link text-dark">หน้า {{ ingredients.number }} จาก {{ ingredients.paginator.num_pages }}</span></li>
+                    {% if ingredients.has_next %}
+                        <li class="page-item"><a class="page-link" href="?s_page={{ ingredients.next_page_number }}#stock" style="border-radius: 0 8px 8px 0;">ถัดไป &raquo;</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+
+        <!-- ประวัติคำสั่งซื้อ -->
+        <div class="tab-pane fade" id="order">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-2">
+                <h5 class="mb-0 fw-bold">รายการขายทั้งหมด</h5>
+                <form method="GET" action="{% url 'admin_manage' %}#order" class="d-flex gap-2">
+                    <input type="text" name="search" class="form-control form-control-sm" placeholder="ค้นหาเลขที่สั่งซื้อ/เบอร์โทร" value="{{ search_query|default:'' }}" style="width: 200px; border-radius: 8px;">
+                    <button type="submit" class="btn btn-primary btn-sm" style="border-radius: 8px; background-color: var(--latte-main); border: none;">
+                        <i class="bi bi-search"></i> ค้นหา
+                    </button>
+                    {% if search_query %}
+                        <a href="{% url 'admin_manage' %}#order" class="btn btn-outline-secondary btn-sm" style="border-radius: 8px;">ล้าง</a>
+                    {% endif %}
+                </form>
+            </div>
+            
+            <!-- Desktop Table View for Orders -->
+            <div class="table-responsive d-none d-md-block">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>เบอร์ลูกค้า</th>
+                            <th>เวลา</th>
+                            <th>ยอดรวม</th>
+                            <th>สถานะ</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in page_obj %}
+                        <tr>
+                            <td>{{ order.order_id }}</td>
+                            <td>{{ order.customer.cus_phone|default:"-" }}</td>
+                            <td>{{ order.order_datetime|date:"d/m/Y H:i" }}</td>
+                            <td class="fw-bold">฿{{ order.total_amount }}</td>
+                            <td>
+                                <span class="badge {% if order.order_status == 'Confirmed' or order.order_status == 'Completed' %}bg-success{% else %}bg-info{% endif %}">
+                                    {{ order.order_status }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" onclick="viewOrderDetails('{{ order.order_id }}')" style="border-radius: 8px;">
+                                    <i class="bi bi-receipt"></i> ดูใบเสร็จ
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">ไม่พบข้อมูลรายการขาย</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mobile View for Orders -->
+            <div class="d-md-none">
+                {% for order in page_obj %}
+                <div class="order-mobile-card mb-3 p-3 border rounded shadow-sm bg-light" style="border-radius: 15px !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-bold text-primary">{{ order.order_id }}</span>
+                        <span class="badge {% if order.order_status == 'Confirmed' or order.order_status == 'Completed' %}bg-success{% else %}bg-info{% endif %}">
+                            {{ order.order_status }}
+                        </span>
+                    </div>
+                    <div class="small text-muted mb-1"><i class="bi bi-telephone me-1"></i> {{ order.customer.cus_phone|default:"ลูกค้าทั่วไป" }}</div>
+                    <div class="small text-muted mb-2"><i class="bi bi-clock me-1"></i> {{ order.order_datetime|date:"d/m/Y H:i" }}</div>
+                    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                        <button class="btn btn-sm btn-link text-primary p-0" onclick="viewOrderDetails('{{ order.order_id }}')">
+                            <i class="bi bi-receipt"></i> ดูใบเสร็จ
+                        </button>
+                        <span class="fw-bold h6 mb-0" style="color: var(--latte-main);">฿{{ order.total_amount }}</span>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center text-muted py-4">ไม่พบข้อมูลรายการขาย</div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination สำหรับประวัติคำสั่งซื้อ -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}#order" aria-label="Previous" style="border-radius: 8px 0 0 8px;">
+                                <span aria-hidden="true">&laquo; ก่อนหน้า</span>
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item disabled">
+                        <span class="page-link text-dark">หน้า {{ page_obj.number }} จาก {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}#order" aria-label="Next" style="border-radius: 0 8px 8px 0;">
+                                <span aria-hidden="true">ถัดไป &raquo;</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Slip Modal -->
+<div class="modal fade" id="slipModal" tabindex="-1" aria-labelledby="slipModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius: 15px; overflow: hidden; border: none; box-shadow: 0 15px 50px rgba(0,0,0,0.1);">
+      <div class="modal-body p-0">
+        <div id="receipt-content" class="receipt-container" style="font-family: 'Courier New', Courier, monospace; background: #fff; padding: 30px; color: #333;">
+            <div class="receipt-header" style="text-align: center; margin-bottom: 20px;">
+                <h2 style="margin: 0; font-size: 28px; font-weight: bold; color: var(--latte-main);">H2O CAFE</h2>
+                <p style="margin: 5px 0 0 0; font-size: 14px; color: #888;">ใบเสร็จรับเงิน / Receipt</p>
+            </div>
+            <div class="receipt-divider" style="border-top: 1px dashed #ccc; margin: 15px 0;"></div>
+            <div class="receipt-row" style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px;">
+                <span>Order ID:</span>
+                <span id="slipOrderId" style="font-weight: bold;"></span>
+            </div>
+            <div class="receipt-row" style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px;">
+                <span>วันที่/Date:</span>
+                <span id="slipDate"></span>
+            </div>
+            <div class="receipt-divider" style="border-top: 1px dashed #ccc; margin: 15px 0;"></div>
+            <div id="slipItems">
+                <!-- Items will be injected here -->
+            </div>
+            <div class="receipt-divider" style="border-top: 1px dashed #ccc; margin: 15px 0;"></div>
+            <div class="receipt-row receipt-total" style="display: flex; justify-content: space-between; margin-top: 10px; font-weight: bold; font-size: 18px; color: var(--latte-main);">
+                <span>ยอดรวม/Total:</span>
+                <span id="slipTotal"></span>
+            </div>
+            <div class="receipt-row" style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px;">
+                <span>ชำระโดย/Payment:</span>
+                <span id="slipPayment"></span>
+            </div>
+            <div class="receipt-divider" style="border-top: 1px dashed #ccc; margin: 15px 0;"></div>
+            <div class="receipt-row" style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px;">
+                <span>ลูกค้า/Customer:</span>
+                <span id="slipCustomer"></span>
+            </div>
+            <div class="receipt-row" style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px;">
+                <span>แต้มที่ได้รับ/Points:</span>
+                <span id="slipPoints"></span>
+            </div>
+            <div class="receipt-footer" style="text-align: center; margin-top: 30px; font-size: 13px; color: #888;">
+                <p style="margin-bottom: 5px;">ขอบคุณที่ใช้บริการ / Thank you!</p>
+            </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 justify-content-center bg-white pb-4">
+        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal" style="border-radius: 12px; border: none;">ปิดหน้าต่าง</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modals (Add/Edit Product & Ingredient) -->
+<!-- Edit Product Modal -->
+<div class="modal fade" id="editProductModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 20px;">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">แก้ไขข้อมูลเมนู</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editProductForm">
+                    <input type="hidden" id="editProdId">
+                    <div class="mb-3">
+                        <label class="form-label">ชื่อเมนู</label>
+                        <input type="text" class="form-control" id="editProdName" required style="border-radius: 10px;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ราคา (฿)</label>
+                        <input type="number" step="0.01" class="form-control" id="editProdPrice" required style="border-radius: 10px;">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label">สถานะเมนู</label>
+                        <select class="form-select" id="editProdStatus" style="border-radius: 10px;">
+                            <option value="On">On (เปิดให้บริการ)</option>
+                            <option value="Off">Off (ปิดให้บริการชั่วคราว)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" style="border-radius: 10px; background-color: var(--latte-main); border: none;">บันทึกการเปลี่ยนแปลง</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Product Modal -->
+<div class="modal fade" id="addProductModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 20px;">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">เพิ่มเมนูใหม่</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addProductForm">
+                    <div class="mb-3">
+                        <label class="form-label">ชื่อเมนู</label>
+                        <input type="text" class="form-control" name="name" required style="border-radius: 10px;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">หมวดหมู่</label>
+                        <select class="form-select" name="category_id" required style="border-radius: 10px;">
+                            {% for cat in categories %}
+                                <option value="{{ cat.category_id }}">{{ cat.category_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ขนาด</label>
+                        <select class="form-select" name="size" style="border-radius: 10px;">
+                            <option value="S">S</option>
+                            <option value="M">M</option>
+                            <option value="L">L</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ราคา (฿)</label>
+                        <input type="number" step="0.01" class="form-control" name="price" required style="border-radius: 10px;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">รูปภาพเมนู (.png เท่านั้น)</label>
+                        <input type="file" class="form-control" name="image" accept="image/png" style="border-radius: 10px;">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label">สถานะเมนู</label>
+                        <select class="form-select" name="status" style="border-radius: 10px;">
+                            <option value="On">On (เปิดให้บริการ)</option>
+                            <option value="Off">Off (ปิดให้บริการชั่วคราว)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100" style="border-radius: 10px; border: none;">เพิ่มเมนู</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Ingredient Modal -->
+<div class="modal fade" id="addIngredientModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 20px;">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">เพิ่มวัตถุดิบใหม่</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addIngredientForm">
+                    <div class="mb-3">
+                        <label class="form-label">ชื่อวัตถุดิบ</label>
+                        <input type="text" class="form-control" name="name" required style="border-radius: 10px;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Supplier</label>
+                        <select class="form-select" name="supplier_id" required style="border-radius: 10px;">
+                            {% for sup in suppliers %}
+                                <option value="{{ sup.supplier_id }}">{{ sup.supplier_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">หน่วยเรียก (เช่น กรัม, ลิตร, ชิ้น)</label>
+                        <input type="text" class="form-control" name="unit" required style="border-radius: 10px;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">จำนวนคงเหลือในสต็อก</label>
+                        <input type="number" step="0.01" class="form-control" name="stock_qty" required style="border-radius: 10px;">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label">จำนวนขั้นต่ำ (เพื่อแจ้งเตือน)</label>
+                        <input type="number" step="0.01" class="form-control" name="min_qty" required style="border-radius: 10px;">
+                    </div>
+                    <button type="submit" class="btn btn-success w-100" style="border-radius: 10px; border: none;">เพิ่มวัตถุดิบ</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Ingredient Modal -->
+<div class="modal fade" id="editIngredientModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 20px;">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">แก้ไขสต็อกวัตถุดิบ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editIngredientForm">
+                    <input type="hidden" id="editIngId">
+                    <div class="mb-3">
+                        <label class="form-label">ชื่อวัตถุดิบ</label>
+                        <input type="text" class="form-control" id="editIngName" readonly style="border-radius: 10px; background-color: #f8f9fa;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Supplier</label>
+                        <select class="form-select" id="editIngSupplier" required style="border-radius: 10px;">
+                            {% for sup in suppliers %}
+                                <option value="{{ sup.supplier_id }}">{{ sup.supplier_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">จำนวนคงเหลือในสต็อก</label>
+                        <input type="number" step="0.01" class="form-control" id="editIngStock" required style="border-radius: 10px;">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label">จำนวนขั้นต่ำ (Min Qty)</label>
+                        <input type="number" step="0.01" class="form-control" id="editIngMin" required style="border-radius: 10px;">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" style="border-radius: 10px; background-color: var(--latte-main); border: none;">บันทึกการแก้ไข</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .nav-tabs .nav-link { color: var(--text-dark); border: none; padding: 10px 20px; }
+    .nav-tabs .nav-link.active { 
+        color: var(--latte-main); 
+        border-bottom: 3px solid var(--latte-main); 
+        font-weight: bold;
+        background: none;
+    }
+    .page-link { color: var(--latte-main); border: 1px solid #dee2e6; }
+    .page-item.active .page-link { background-color: var(--latte-main); border-color: var(--latte-main); }
+</style>
+{% endblock %}
+
+{% block script %}
+<script>
+    // Auto-switch to tab from URL hash
+    document.addEventListener("DOMContentLoaded", function() {
+        const hash = window.location.hash;
+        if (hash) {
+            const tabEl = document.querySelector(`button[data-bs-target="${hash}"]`);
+            if (tabEl) {
+                const tab = new bootstrap.Tab(tabEl);
+                tab.show();
+            }
+        }
+    });
+
+    // Filter Category & Search Product
+    function filterProducts() {
+        const catId = document.getElementById('categoryFilter').value;
+        const searchText = document.getElementById('productSearch').value.toLowerCase();
+        const items = document.querySelectorAll('.product-item');
+        
+        items.forEach(item => {
+            const productName = item.querySelector('.fw-bold').innerText.toLowerCase();
+            const matchesCategory = (catId === 'all' || item.classList.contains(catId));
+            const matchesSearch = productName.includes(searchText);
+            
+            if (matchesCategory && matchesSearch) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+
+    document.getElementById('categoryFilter').addEventListener('change', filterProducts);
+    document.getElementById('productSearch').addEventListener('input', filterProducts);
+
+    // Search & Filter Stock Ingredients
+    function filterStock() {
+        const searchText = document.getElementById('stockSearch').value.toLowerCase();
+        const supplierFilter = document.getElementById('supplierFilter').value;
+        const items = document.querySelectorAll('.ingredient-row');
+        
+        items.forEach(item => {
+            const textContent = item.innerText.toLowerCase();
+            const supplierName = item.getAttribute('data-supplier');
+            
+            const matchesSearch = textContent.includes(searchText);
+            const matchesSupplier = (supplierFilter === 'all' || supplierName === supplierFilter);
+            
+            if (matchesSearch && matchesSupplier) {
+                item.style.setProperty('display', '', 'important');
+            } else {
+                item.style.setProperty('display', 'none', 'important');
+            }
+        });
+    }
+
+    document.getElementById('stockSearch').addEventListener('input', filterStock);
+    document.getElementById('supplierFilter').addEventListener('change', filterStock);
+
+    // Modals & AJAX Handlers
+    function openAddModal() { new bootstrap.Modal(document.getElementById('addProductModal')).show(); }
+    document.getElementById('addProductForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        fetch('{% url "add_product" %}', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            body: formData  // Send FormData directly for file upload support
+        }).then(res => res.json()).then(data => {
+            if (data.success) { window.location.hash = '#product'; location.reload(); }
+            else { alert(data.error || 'เกิดข้อผิดพลาด'); }
+        });
+    });
+
+    function openEditModal(id, name, price, isActive) {
+        document.getElementById('editProdId').value = id;
+        document.getElementById('editProdName').value = name;
+        document.getElementById('editProdPrice').value = price;
+        document.getElementById('editProdStatus').value = (isActive === 'True') ? 'On' : 'Off';
+        new bootstrap.Modal(document.getElementById('editProductModal')).show();
+    }
+
+    document.getElementById('editProductForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new URLSearchParams();
+        formData.append('product_id', document.getElementById('editProdId').value);
+        formData.append('name', document.getElementById('editProdName').value);
+        formData.append('price', document.getElementById('editProdPrice').value);
+        formData.append('status', document.getElementById('editProdStatus').value);
+        fetch('{% url "edit_product" %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': '{{ csrf_token }}' },
+            body: formData
+        }).then(res => res.json()).then(data => { if (data.success) location.reload(); });
+    });
+
+    function openAddIngredientModal() { new bootstrap.Modal(document.getElementById('addIngredientModal')).show(); }
+    document.getElementById('addIngredientForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        fetch('{% url "add_ingredient" %}', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            body: new URLSearchParams(new FormData(this))
+        }).then(res => res.json()).then(data => {
+            if (data.success) { window.location.hash = '#stock'; location.reload(); }
+        });
+    });
+
+    function openEditIngredientModal(id, name, supplierId, stock, minQty) {
+        document.getElementById('editIngId').value = id;
+        document.getElementById('editIngName').value = name;
+        document.getElementById('editIngSupplier').value = supplierId;
+        document.getElementById('editIngStock').value = stock;
+        document.getElementById('editIngMin').value = minQty;
+        new bootstrap.Modal(document.getElementById('editIngredientModal')).show();
+    }
+
+    document.getElementById('editIngredientForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new URLSearchParams();
+        formData.append('ingredient_id', document.getElementById('editIngId').value);
+        formData.append('supplier_id', document.getElementById('editIngSupplier').value);
+        formData.append('stock_qty', document.getElementById('editIngStock').value);
+        formData.append('min_qty', document.getElementById('editIngMin').value);
+        fetch('{% url "edit_ingredient" %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': '{{ csrf_token }}' },
+            body: formData
+        }).then(res => res.json()).then(data => { if (data.success) { window.location.hash = '#stock'; location.reload(); } });
+    });
+
+    function viewOrderDetails(orderId) {
+        fetch(`{% url 'get_order_details' %}?order_id=${orderId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('slipOrderId').textContent = data.order_id;
+                document.getElementById('slipDate').textContent = data.datetime;
+                document.getElementById('slipTotal').textContent = '฿ ' + data.total.toLocaleString(undefined, {minimumFractionDigits: 2});
+                document.getElementById('slipPayment').textContent = data.payment_method;
+                document.getElementById('slipCustomer').textContent = data.customer_name;
+                document.getElementById('slipPoints').textContent = '+' + data.points_earned;
+
+                const itemsContainer = document.getElementById('slipItems');
+                itemsContainer.innerHTML = '';
+                data.items.forEach(item => {
+                    const itemRow = document.createElement('div');
+                    itemRow.style.marginBottom = '8px';
+                    itemRow.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                            <span style="flex: 1;">${item.name} x ${item.quantity}</span>
+                            <span style="font-weight: bold;">฿ ${(item.price * item.quantity).toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+                        </div>
+                        <div style="font-size: 11px; color: #888; padding-left: 10px; line-height: 1.2;">
+                            ${item.note}
+                        </div>
+                    `;
+                    itemsContainer.appendChild(itemRow);
+                });
+
+                const modal = new bootstrap.Modal(document.getElementById('slipModal'));
+                modal.show();
+            } else {
+                alert('ไม่สามารถดึงข้อมูลได้');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching order details:', error);
+            alert('เกิดข้อผิดพลาดในการดึงข้อมูล');
+        });
+    }
+</script>
+{% endblock %}
