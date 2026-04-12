@@ -1,4 +1,4 @@
-from django.db import models
+﻿from django.db import models
 from django.utils import timezone
 # Create your models here.
     
@@ -114,17 +114,6 @@ class Products(models.Model):
         db_table = 'products'
 
 
-class Recipes(models.Model):
-    recipe_id = models.CharField(primary_key=True, max_length=6)
-    product = models.ForeignKey(Products, models.DO_NOTHING)
-    ingredient = models.ForeignKey(Ingredients, models.DO_NOTHING)
-    quantity_used = models.DecimalField(max_digits=10, decimal_places=2)
-
-    class Meta:
-        managed = True
-        db_table = 'recipes'
-
-
 class Suppliers(models.Model):
     supplier_id = models.CharField(primary_key=True, max_length=6)
     supplier_name = models.CharField(max_length=150)
@@ -136,3 +125,14 @@ class Suppliers(models.Model):
     class Meta:
         managed = True
         db_table = 'suppliers'
+
+class Recipes(models.Model):
+    recipe_id = models.CharField(primary_key=True, max_length=6)
+    product = models.ForeignKey(Products, models.DO_NOTHING)
+    ingredient = models.ForeignKey(Ingredients, models.DO_NOTHING)
+    quantity_used = models.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        managed = True
+        db_table = 'recipes'
+

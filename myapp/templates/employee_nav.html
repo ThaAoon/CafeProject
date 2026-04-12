@@ -96,7 +96,7 @@
 
     <div class="row g-4 justify-content-center">
         <!-- เมนูรอคิว -->
-        <div class="col-md-4">
+        <div class="col-md-3">
             <a href="{% url 'queue' %}" class="nav-card">
                 <div class="nav-icon">
                     <i class="bi bi-list-stars"></i>
@@ -106,8 +106,19 @@
             </a>
         </div>
 
+        <!-- สูตรการทำเครื่องดื่ม -->
+        <div class="col-md-3">
+            <a href="{% url 'recipes' %}" class="nav-card">
+                <div class="nav-icon">
+                    <i class="bi bi-journal-text"></i>
+                </div>
+                <div class="nav-title">สูตรการทำ</div>
+                <div class="nav-desc">ดูสูตรและวิธีการชงเครื่องดื่ม</div>
+            </a>
+        </div>
+
         <!-- จัดการข้อมูล -->
-        <div class="col-md-4">
+        <div class="col-md-3">
             <a href="{% url 'admin_manage' %}" class="nav-card">
                 <div class="nav-icon">
                     <i class="bi bi-gear-wide-connected"></i>
@@ -118,7 +129,7 @@
         </div>
 
         <!-- Dashboard -->
-        <div class="col-md-4">
+        <div class="col-md-3">
             {% if emp_position != 'Sales' %}
             <a href="{% url 'dashboard' %}" class="nav-card">
             {% else %}

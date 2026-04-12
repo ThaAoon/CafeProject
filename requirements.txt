@@ -1,8 +1,9 @@
-Django==6.0.3
-gunicorn==23.0.0
-whitenoise==6.9.0
 asgiref==3.8.1
-sqlparse==0.5.3
-tzdata==2025.1
-python-dateutil==2.9.0
+Django==5.1.4
+django-utils-six==2.0
+python-dateutil==2.9.0.post0
 six==1.17.0
+sqlparse==0.5.3
+tzdata==2024.2
+django-mssql-backend==2.8.1
+pyodbc==5.2.0

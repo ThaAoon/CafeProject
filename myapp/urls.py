@@ -21,5 +21,8 @@ urlpatterns = [
     path('get_customer_info/', views.get_customer_info, name='get_customer_info'),
     path('get_order_details/', views.get_order_details, name='get_order_details'),
     path('queue/', views.queue, name='queue'),
+    path('recipes/', views.recipe_list, name='recipes'),
+    path('save_recipe/', views.save_recipe, name='save_recipe'),
+    path('get_recipe_details/', views.get_recipe_details, name='get_recipe_details'),
     path('update_order_status/<str:order_id>/<str:new_status>/', views.update_order_status, name='update_order_status'),
 ]

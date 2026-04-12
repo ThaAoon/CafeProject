@@ -555,6 +555,95 @@ def update_order_status(request, order_id, new_status):
     order.save()
     return redirect('queue')
 
+def recipe_list(request):
+    if 'employee_id' not in request.session: return redirect('login')
+    
+    search_query = request.GET.get('search', '').strip()
+    products = Products.objects.filter(is_active='True').order_by('category', 'product_name')
+    all_ingredients = Ingredients.objects.all().order_by('ingredient_name')
+    
+    if search_query:
+        products = products.filter(product_name__icontains=search_query)
+
+    for product in products:
+        product.recipe_items = Recipes.objects.filter(product=product).select_related('ingredient')
+        
+    return render(request, 'recipes.html', {
+        'products': products,
+        'all_ingredients': all_ingredients,
+        'emp_name': request.session.get('employee_name'),
+        'search_query': search_query
+    })
+
+def save_recipe(request):
+    if 'employee_id' not in request.session: return JsonResponse({'error': 'Unauthorized'}, status=401)
+    if request.method != 'POST': return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        product_id = request.POST.get('product_id')
+        ingredient_ids = request.POST.getlist('ingredient_ids[]')
+        quantities = request.POST.getlist('quantities[]')
+        description = request.POST.get('description', '')
+        
+        product = get_object_or_404(Products, pk=product_id)
+        
+        # อัปเดตวิธีทำใน Product
+        product.description = description
+        product.save()
+        
+        # ลบสูตรเดิมออกก่อนเพื่อเขียนใหม่
+        Recipes.objects.filter(product=product).delete()
+        
+        # หาเลข ID ล่าสุดของ Recipes
+        last_r = Recipes.objects.filter(recipe_id__startswith='RE').order_by('-recipe_id').first()
+        next_num = int(last_r.recipe_id[2:]) + 1 if last_r else 1
+        
+        # บันทึกส่วนผสมใหม่
+        for i in range(len(ingredient_ids)):
+            ing_id = ingredient_ids[i]
+            qty = Decimal(quantities[i])
+            
+            if qty <= 0: continue
+            
+            ingredient = get_object_or_404(Ingredients, pk=ing_id)
+            new_id = f"RE{next_num:04d}"
+            
+            Recipes.objects.create(
+                recipe_id=new_id,
+                product=product,
+                ingredient=ingredient,
+                quantity_used=qty
+            )
+            next_num += 1
+            
+        return JsonResponse({'success': True, 'message': 'บันทึกสูตรเรียบร้อยแล้ว'})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def get_recipe_details(request):
+    product_id = request.GET.get('product_id')
+    product = get_object_or_404(Products, pk=product_id)
+    recipes = Recipes.objects.filter(product=product).select_related('ingredient')
+    
+    recipe_items = []
+    for r in recipes:
+        recipe_items.append({
+            'ingredient_id': r.ingredient.ingredient_id,
+            'ingredient_name': r.ingredient.ingredient_name,
+            'quantity': float(r.quantity_used),
+            'unit': r.ingredient.unit
+        })
+        
+    return JsonResponse({
+        'success': True,
+        'product_name': product.product_name,
+        'product_id': product.product_id,
+        'size': product.size,
+        'category': product.category.category_name,
+        'description': product.description or '',
+        'items': recipe_items
+    })
+
 def logout(request):
     request.session.flush()
     return redirect('login')
