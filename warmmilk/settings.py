@@ -29,7 +29,12 @@ ALLOWED_HOSTS = [
     'nonastronomically-sclerosed-rocio.ngrok-free.dev',
     'localhost',
     '127.0.0.1',
-    '.onrender.com', # Render domain
+    '.onrender.com',
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.onrender.com',
+    'https://nonastronomically-sclerosed-rocio.ngrok-free.dev',
 ]
 
 
