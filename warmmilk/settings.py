@@ -127,5 +127,5 @@ STATIC_ROOT = BASE_DIR / 'staticfiles' # Needed for WhiteNoise
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage' # Optimize files
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://nonastronomically-sclerosed-rocio.ngrok-free.dev',
+    'https://cafeproject-ire2.onrender.com',
 ]
