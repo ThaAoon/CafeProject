@@ -5,7 +5,7 @@ __pycache__/
 venv/
 env/
 .env
-staticfiles/
+
 .vscode/
 .idea/
 .DS_Store
