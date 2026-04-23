@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='products',
             name='description',
-            field=models.TextField(blank=True, db_collation='Thai_CS_AI', null=True),
+            field=models.TextField(blank=True, null=True),
         ),
     ]
