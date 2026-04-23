@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='ingredients',
             name='classifier',
-            field=models.CharField(blank=True, choices=[('กล่อง', 'กล่อง'), ('ขวด', 'ขวด'), ('ห่อ', 'ห่อ'), ('ชิ้น', 'ชิ้น'), ('ถุง', 'ถุง')], db_collation='Thai_CS_AI', default='ชิ้น', max_length=50, null=True),
+            field=models.CharField(blank=True, choices=[('กล่อง', 'กล่อง'), ('ขวด', 'ขวด'), ('ห่อ', 'ห่อ'), ('ชิ้น', 'ชิ้น'), ('ถุง', 'ถุง')], default='ชิ้น', max_length=50, null=True),
         ),
         migrations.AddField(
             model_name='ingredients',
@@ -27,11 +27,11 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='employees',
             name='position',
-            field=models.CharField(blank=True, choices=[('Manager', 'Manager'), ('Assistant manager', 'Assistant manager'), ('Sales', 'Sales')], db_collation='Thai_CS_AI', max_length=100, null=True),
+            field=models.CharField(blank=True, choices=[('Manager', 'Manager'), ('Assistant manager', 'Assistant manager'), ('Sales', 'Sales')],  max_length=100, null=True),
         ),
         migrations.AlterField(
             model_name='ingredients',
             name='unit',
-            field=models.CharField(blank=True, choices=[('กรัม', 'กรัม (g)'), ('มิลลิลิตร', 'มิลลิลิตร (ml)'), ('ชิ้น', 'ชิ้น (pcs)'), ('Topping', 'Topping')], db_collation='Thai_CS_AI', max_length=50, null=True),
+            field=models.CharField(blank=True, choices=[('กรัม', 'กรัม (g)'), ('มิลลิลิตร', 'มิลลิลิตร (ml)'), ('ชิ้น', 'ชิ้น (pcs)'), ('Topping', 'Topping')], max_length=50, null=True),
         ),
     ]
