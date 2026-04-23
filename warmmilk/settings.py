@@ -93,7 +93,8 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'myapp/static'),
 ]
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# ลองใช้แบบธรรมดาแทน CompressedManifest เพื่อเช็คว่ารูปมามั้ย
+STATICFILES_STORAGE = 'whitenoise.storage.StaticFilesStorage'
 
 # Media files (สำหรับรูปภาพที่อัปโหลด)
 MEDIA_URL = '/media/'
